@@ -1,0 +1,81 @@
+#!/bin/bash
+
+# ==============================================================================
+#  clocks — Mux Clock launcher for Raspberry Pi
+#  Starts a tmux session with 2 or 2×2 world clocks using pyclock.py.
+#
+#  Usage: clocks [MODE]
+#
+#  Modes:
+#    4  (default)  2×2 grid: Seoul, Los Angeles, Singapore, New York
+#    2             Top/bottom: Seoul, Los Angeles
+#
+#  Examples:
+#    clocks       # 2×2 layout
+#    clocks 2     # top/bottom layout
+#    clocks 4     # 2×2 layout (explicit)
+#
+#  Requirements:
+#    python3, tmux
+#
+#  pyclock.py must be in the same directory as this script.
+#
+#  Repository: https://github.com/yusungchang/mux-clock
+# ==============================================================================
+
+VERSION="@@VERSION@@"
+
+SESSION=clocks
+PYCLOCK="$(dirname "$(realpath "$0")")/pyclock.py"
+MODE="${1:-4}"  # default 4 pane (2x2), pass 2 for top/bottom
+
+# Validate pyclock.py is present
+if [ ! -f "$PYCLOCK" ]; then
+    echo "clocks: error: pyclock.py not found at $PYCLOCK" >&2
+    exit 1
+fi
+
+tmux kill-session -t "$SESSION" 2>/dev/null
+tmux new-session -d -s "$SESSION"
+
+tmux set-option -t "$SESSION" status off
+tmux set-hook -t "$SESSION" pane-exited 'kill-session -t #{hook_session}'
+
+SCALE=1
+[ "$MODE" = "2" ] && SCALE=2
+
+clock_cmd() {
+    local tz="$1"
+    local city="$2"
+    printf 'HISTFILE=/dev/null exec env TZ=%s python3 %s -n -S -s %s -z %s -f "%-12s %%Y-%%m-%%d %%a %%Z"' \
+        "$tz" "$PYCLOCK" "$SCALE" "$tz" "$city"
+}
+
+P0=$(tmux display-message -t "$SESSION":0.0 -p '#{pane_id}')
+
+if [ "$MODE" = "2" ]; then
+    # Top/bottom: Seoul + Los Angeles
+    P1=$(tmux split-window -v -t "$P0" -P -F '#{pane_id}')
+
+    tmux send-keys -t "$P0" "$(clock_cmd Asia/Seoul          'Seoul'      )" C-m
+    tmux send-keys -t "$P1" "$(clock_cmd America/Los_Angeles 'Los Angeles')" C-m
+
+else
+    # 2×2: Seoul / Los Angeles / Singapore / New York
+    P1=$(tmux split-window -h -t "$P0" -P -F '#{pane_id}')
+    P2=$(tmux split-window -v -t "$P0" -P -F '#{pane_id}')
+    P3=$(tmux split-window -v -t "$P1" -P -F '#{pane_id}')
+
+    tmux select-layout -t "$SESSION":0 tiled
+
+    tmux send-keys -t "$P0" "$(clock_cmd Asia/Seoul          'Seoul'      )" C-m
+    tmux send-keys -t "$P1" "$(clock_cmd America/Los_Angeles 'Los Angeles')" C-m
+    tmux send-keys -t "$P2" "$(clock_cmd Asia/Singapore      'Singapore'  )" C-m
+    tmux send-keys -t "$P3" "$(clock_cmd America/New_York    'New York'   )" C-m
+fi
+
+if [ -z "$TMUX" ]; then
+    tmux attach -t "$SESSION"
+else
+    tmux switch-client -t "$SESSION"
+fi

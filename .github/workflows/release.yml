@@ -1,0 +1,46 @@
+# ==============================================================================
+#  Release Workflow
+#  To release a new version, tag a commit and push:
+#
+#    git tag v1.0.0
+#    git push origin v1.0.0
+#
+#  This workflow will automatically:
+#    1. Stamp the version into the clocks script
+#    2. Create a GitHub Release
+#    3. Attach both clocks and pyclock.py as release assets
+# ==============================================================================
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Stamp version into clocks script
+        run: |
+          sed "s/@@VERSION@@/${{ github.ref_name }}/" clocks > /tmp/clocks
+          chmod +x /tmp/clocks
+          cp pyclock.py /tmp/pyclock.py
+          chmod +x /tmp/pyclock.py
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          files: |
+            /tmp/clocks
+            /tmp/pyclock.py
+          generate_release_notes: true
