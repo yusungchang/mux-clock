@@ -26,11 +26,17 @@
 
 ## Installation
 
-```
+```bash
+# Default — installs to ~/.local/bin
 curl -fsSL https://raw.githubusercontent.com/yusungchang/mux-clock/main/install.sh | bash
+
+# Custom location
+curl -fsSL https://raw.githubusercontent.com/yusungchang/mux-clock/main/install.sh | INSTALL_DIR=/usr/local/bin bash
 ```
 
-You can inspect [`install.sh`](install.sh) before running — it downloads the latest release binaries to `~/.local/bin` and ensures it's on your PATH.
+You can inspect [`install.sh`](install.sh) before running. Both `clocks` and `pyclock.py` are installed side by side in the same directory.
+
+When installing to the default `~/.local/bin`, the installer will add it to your PATH in `~/.bashrc` if not already present. For custom locations, ensure the directory is on your PATH manually.
 
 After installation, open a new terminal or run:
 
@@ -107,21 +113,6 @@ Colors are driven by the **reference timezone** (`-z`), so each pane reflects it
 
 ---
 
-## Repository Structure
-
-```
-mux-clock/
-├── pyclock.py              # Python clock engine
-├── clocks                  # tmux launcher (2 or 2×2 layout)
-├── install.sh              # installer script
-├── LICENSE
-└── .github/
-    └── workflows/
-        └── release.yml     # tags → GitHub Release with both binaries
-```
-
----
-
 ## License
 
-MIT © 2026 Yu-Sung "Ryan" Chang — see [LICENSE](LICENSE) for terms.
+MIT © 2026 Yu-Sung Chang — see [LICENSE](LICENSE) for terms.
