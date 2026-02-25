@@ -19,6 +19,8 @@ set -euo pipefail
 
 REPO="yusungchang/mux-clock"
 DEST="${INSTALL_DIR:-$HOME/.local/bin}"
+# Expand tilde if present (e.g. ~/bin passed via env var)
+DEST="${DEST/#\~/$HOME}"
 BASHRC="$HOME/.bashrc"
 
 BASE_URL="https://github.com/$REPO/releases/latest/download"
